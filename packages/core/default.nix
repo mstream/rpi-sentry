@@ -7,7 +7,7 @@ lib.mkPoetryPackage {
   version = "0.1.0";
   src = ./.;
   deps = [
-    (with pkgs.python3Packages; [ pydantic ])
+    (with pkgs.python3Packages; [ pydantic pyfakefs ])
     (import ../gpiozero { inherit pkgs; })
   ];
 }

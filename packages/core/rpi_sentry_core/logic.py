@@ -5,6 +5,14 @@ import time
 import typing
 
 
+def generateTimestamp():
+    return time.time_ns()
+
+
+def sleep(duration):
+    time.sleep(duration / 1e9)
+
+
 class SensorReadings(p.BaseModel):
     motion_1: float
     motion_2: float
@@ -73,7 +81,7 @@ def presence_rank(
     return sound + motion_1 + motion_2
 
 
-def logic(external_config, external_state):
+def run(external_config, external_state):
     config = Config(**external_config)
     sensor_readings = SensorReadings(**external_state)
 
@@ -81,18 +89,23 @@ def logic(external_config, external_state):
     motion_sensor_1 = gpiozero.MotionSensor(config.pins.motion_sensor_1)
     motion_sensor_2 = gpiozero.MotionSensor(config.pins.motion_sensor_2)
 
-    sound_sensor.when_motion = lambda: sensor_readings.update_sound(time.time())
-    motion_sensor_1.when_motion = lambda: sensor_readings.update_motion_1(time.time())
-    motion_sensor_2.when_motion = lambda: sensor_readings.update_motion_2(time.time())
+    sound_sensor.when_motion = lambda: sensor_readings.update_sound(generateTimestamp())
 
-    max_sleep_time = 1.0 / config.frequency
+    motion_sensor_1.when_motion = lambda: sensor_readings.update_motion_1(
+        generateTimestamp()
+    )
+    motion_sensor_2.when_motion = lambda: sensor_readings.update_motion_2(
+        generateTimestamp()
+    )
+
+    max_sleep_time = 1e-9 / config.frequency
 
     weight_total = config.weights.motion + config.weights.sound
     weight_sound_sensor = config.weights.sound / weight_total
     weight_motion_sensor = (config.weights.motion / 2) / weight_total
 
     while True:
-        now = time.time()
+        now = generateTimestamp()
         rank = presence_rank(
             weight_sound_sensor,
             weight_motion_sensor,
@@ -101,7 +114,7 @@ def logic(external_config, external_state):
             sensor_readings,
         )
         config.action(TriggerEvent(rank=rank, timestamp=now))
-        time_elapsed = time.time() - now
+        time_elapsed = generateTimestamp() - now
         sleep_time = max_sleep_time - time_elapsed
         if sleep_time > 0:
             time.sleep(sleep_time)

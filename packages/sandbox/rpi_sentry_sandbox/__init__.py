@@ -1,5 +1,6 @@
 import json
 import os
+import rpi_sentry_core.camera
 import rpi_sentry_core.logic
 import tkgpio
 
@@ -12,7 +13,7 @@ with open(circuit_conf_path, "r") as file:
 
 
 logic_conf = {
-    "action": lambda event: print("action triggered", event),
+    "action": rpi_sentry_core.camera.take_photo,
     "frequency": 2,
     "pins": {
         "sound_sensor": motion_sensors_conf[0]["pin"],
@@ -37,4 +38,4 @@ circuit = tkgpio.TkCircuit(circuit_conf)
 
 @circuit.run
 def main():
-    rpi_sentry_core.logic.logic(logic_conf, initial_readings)
+    rpi_sentry_core.logic.run(logic_conf, initial_readings)

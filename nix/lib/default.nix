@@ -1,12 +1,12 @@
 { pkgs, ... }:
 let
-  testPython = pkgs.python3.withPackages (ps: with ps; [ hypothesis pytest ]);
+  testPython = pkgs.python3.withPackages (ps: with ps; [ hypothesis pyfakefs pytest ]);
   mkSpec = { deps, src, name, version }:
     {
       inherit src version;
       doCheck = true;
       checkPhase = ''
-        ${testPython}/bin/pytest -p no:cacheprovider ${src}/tests
+        ${testPython}/bin/python -m pytest -p no:cacheprovider ${src}/tests
       '';
       pname = "rpi-sentry-${name}";
       pyproject = true;
