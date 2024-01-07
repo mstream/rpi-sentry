@@ -42,7 +42,7 @@ def logic(config):
     motion_sensor_1.when_motion = lambda: on_sensor_triggered("motion_1", time.time())
     motion_sensor_2.when_motion = lambda: on_sensor_triggered("motion_2", time.time())
 
-    sleep_time = 1.0 / config["frequency"]
+    max_sleep_time = 1.0 / config["frequency"]
 
     window = config["window"]
 
@@ -50,4 +50,8 @@ def logic(config):
         now = time.time()
         rank = presence_rank(window, now)
         print("rank: ", rank)
-        time.sleep(sleep_time)
+        time_elapsed = time.time() - now
+        sleep_time = max_sleep_time - time_elapsed
+        if sleep_time > 0:
+            print("sleeping for ", sleep_time)
+            time.sleep(sleep_time)
