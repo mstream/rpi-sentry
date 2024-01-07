@@ -1,0 +1,14 @@
+arm_freq=600
+arm_freq_min=600
+camera_auto_detect=1
+core_freq_min=100
+disable_overscan=1
+display_auto_detect=0
+#dtparam=act_led_trigger=none
+#dtparam=act_led_activelow=on
+dtparam=audio=off
+dtoverlay=disable-bt
+max_framebuffers=2
+over_voltage=-8
+over_voltage_min=-8
+sdram_freq_min=150

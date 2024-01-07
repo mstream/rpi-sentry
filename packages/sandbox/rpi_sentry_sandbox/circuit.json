@@ -1,0 +1,34 @@
+{
+  "name": "RPI Sentry Circuit",
+  "width": 400,
+  "height": 300,
+  "motion_sensors": [
+    {
+      "x": 160,
+      "y": 180,
+      "name": "Sound Sensor",
+      "pin": 27,
+      "detection_radius": 50,
+      "delay_duration": 1,
+      "block_duration": 1
+    },
+    {
+      "x": 60,
+      "y": 80,
+      "name": "Motion Sensor 1",
+      "pin": 17,
+      "detection_radius": 50,
+      "delay_duration": 1,
+      "block_duration": 1
+    },
+    {
+      "x": 210,
+      "y": 80,
+      "name": "Motion Sensor 2",
+      "pin": 18,
+      "detection_radius": 50,
+      "delay_duration": 1,
+      "block_duration": 1
+    }
+  ]
+}

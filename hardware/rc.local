@@ -1,0 +1,5 @@
+set -e
+
+/usr/bin/tvservice -o
+echo '1-1' | sudo tee /sys/bus/usb/drivers/usb/unbind
+#echo none | sudo tee /sys/class/leds/led0/trigger
