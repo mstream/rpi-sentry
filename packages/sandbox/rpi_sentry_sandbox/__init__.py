@@ -26,9 +26,15 @@ logic_conf = {
     "window": 60,
 }
 
+initial_readings = {
+    "motion_1": 0.0,
+    "motion_2": 0.0,
+    "sound": 0.0,
+}
+
 circuit = tkgpio.TkCircuit(circuit_conf)
 
 
 @circuit.run
 def main():
-    rpi_sentry_core.logic.logic(logic_conf)
+    rpi_sentry_core.logic.logic(logic_conf, initial_readings)

@@ -4,7 +4,29 @@ import pydantic as p
 import time
 import typing
 
-last_timestamps = {"motion_1": 0.0, "motion_2": 0.0, "sound": 0.0}
+
+class SensorReadings(p.BaseModel):
+    motion_1: float
+    motion_2: float
+    sound: float
+
+    def update_motion_1(self, timestamp):
+        self.motion_1 = timestamp
+
+    def update_motion_2(self, timestamp):
+        self.motion_2 = timestamp
+
+    def update_sound(self, timestamp):
+        self.sound = timestamp
+
+    def get_motion_rank_1(self, window, now):
+        return rank(window, now - self.motion_1)
+
+    def get_motion_rank_2(self, window, now):
+        return rank(window, now - self.motion_2)
+
+    def get_sound_rank(self, window, now):
+        return rank(window, now - self.sound)
 
 
 class TriggerEvent(p.BaseModel):
@@ -31,11 +53,6 @@ class Config(p.BaseModel):
     window: p.PositiveInt
 
 
-def on_sensor_triggered(sensor_name, now):
-    global last_timestamps
-    last_timestamps[sensor_name] = now
-
-
 def rank(window, delta):
     value = window - delta
     if value <= 1:
@@ -46,28 +63,27 @@ def rank(window, delta):
         return math.log(value, window)
 
 
-def sensor_rank(window, sensor_name, now):
-    delta = now - last_timestamps[sensor_name]
-    return rank(window, delta)
-
-
-def presence_rank(weight_sound_sensor, weight_motion_sensor, window, now):
-    sound = weight_sound_sensor * sensor_rank(window, "sound", now)
-    motion_1 = weight_motion_sensor * sensor_rank(window, "motion_1", now)
-    motion_2 = weight_motion_sensor * sensor_rank(window, "motion_2", now)
+def presence_rank(
+    weight_sound_sensor, weight_motion_sensor, window, now, sensor_readings
+):
+    sound = weight_sound_sensor * sensor_readings.get_sound_rank(window, now)
+    motion_1 = weight_motion_sensor * sensor_readings.get_motion_rank_1(window, now)
+    motion_2 = weight_motion_sensor * sensor_readings.get_motion_rank_2(window, now)
 
     return sound + motion_1 + motion_2
 
 
-def logic(external_config):
+def logic(external_config, external_state):
     config = Config(**external_config)
+    sensor_readings = SensorReadings(**external_state)
+
     sound_sensor = gpiozero.MotionSensor(config.pins.sound_sensor)
     motion_sensor_1 = gpiozero.MotionSensor(config.pins.motion_sensor_1)
     motion_sensor_2 = gpiozero.MotionSensor(config.pins.motion_sensor_2)
 
-    sound_sensor.when_motion = lambda: on_sensor_triggered("sound", time.time())
-    motion_sensor_1.when_motion = lambda: on_sensor_triggered("motion_1", time.time())
-    motion_sensor_2.when_motion = lambda: on_sensor_triggered("motion_2", time.time())
+    sound_sensor.when_motion = lambda: sensor_readings.update_sound(time.time())
+    motion_sensor_1.when_motion = lambda: sensor_readings.update_motion_1(time.time())
+    motion_sensor_2.when_motion = lambda: sensor_readings.update_motion_2(time.time())
 
     max_sleep_time = 1.0 / config.frequency
 
@@ -78,7 +94,11 @@ def logic(external_config):
     while True:
         now = time.time()
         rank = presence_rank(
-            weight_sound_sensor, weight_motion_sensor, config.window, now
+            weight_sound_sensor,
+            weight_motion_sensor,
+            config.window,
+            now,
+            sensor_readings,
         )
         config.action(TriggerEvent(rank=rank, timestamp=now))
         time_elapsed = time.time() - now
