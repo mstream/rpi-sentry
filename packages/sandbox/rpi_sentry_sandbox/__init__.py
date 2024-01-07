@@ -12,11 +12,16 @@ with open(circuit_conf_path, "r") as file:
 
 
 logic_conf = {
+    "action": lambda event: print("action triggered", event),
     "frequency": 2,
     "pins": {
         "sound_sensor": motion_sensors_conf[0]["pin"],
         "motion_sensor_1": motion_sensors_conf[1]["pin"],
         "motion_sensor_2": motion_sensors_conf[2]["pin"],
+    },
+    "weights": {
+        "motion": 6,
+        "sound": 4,
     },
     "window": 60,
 }
