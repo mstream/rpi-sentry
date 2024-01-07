@@ -13,6 +13,11 @@ def test_rank_is_never_greater_than_one(delta, window):
     assert under_test.rank(window, delta) <= 1.0
 
 
+@given(delta=st.floats(allow_nan=False), window=st.integers(min_value=1))
+def test_rank_same_for_same_delta(delta, window):
+    assert under_test.rank(window, delta) == under_test.rank(window, delta)
+
+
 @given(window=st.integers(min_value=3))
 def test_rank_higher_for_lower_deltas(window):
     third_of_window = window / 3.0
