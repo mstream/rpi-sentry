@@ -9,12 +9,17 @@
       system = "aarch64-darwin";
       pkgs = import inputs.nixpkgs { inherit system; };
       packages = {
+        app = import ./packages/app { inherit pkgs; };
         core = import ./packages/core { inherit pkgs; };
         gpiozero = import ./packages/gpiozero { inherit pkgs; };
         sandbox = import ./packages/sandbox { inherit pkgs; };
         tkgpio = import ./packages/tkgpio { inherit pkgs; };
       };
       apps = {
+        app = {
+          type = "app";
+          program = "${packages.app}/bin/app";
+        };
         sandbox = {
           type = "app";
           program = "${packages.sandbox}/bin/sandbox";
@@ -23,7 +28,7 @@
     in
     {
       apps.${system} = {
-        inherit (apps) sandbox;
+        inherit (apps) app sandbox;
         default = apps.sandbox;
       };
       devShell.${ system} = pkgs.mkShell {
@@ -34,7 +39,7 @@
         '';
       };
       packages.${system} = {
-        inherit (packages) core gpiozero sandbox tkgpio;
+        inherit (packages) app core gpiozero sandbox tkgpio;
         default = packages.sandbox;
       };
     };

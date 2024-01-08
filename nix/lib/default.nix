@@ -1,6 +1,11 @@
 { pkgs, ... }:
 let
-  testPython = pkgs.python3.withPackages (ps: with ps; [ hypothesis pyfakefs pytest ]);
+  testPython = pkgs.python3.withPackages (ps: with ps; [
+    hypothesis
+    pyfakefs
+    pytest
+    pytest-mock
+  ]);
   mkSpec = { deps, src, name, version }:
     {
       inherit src version;

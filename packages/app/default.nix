@@ -2,12 +2,12 @@
 let
   lib = import ../../nix/lib { inherit pkgs; };
 in
-lib.mkPoetryPackage {
-  name = "core";
+lib.mkPoetryApp {
+  name = "app";
   version = "0.1.0";
   src = ./.;
   deps = [
-    (with pkgs.python3Packages; [ fs pydantic ])
+    (import ../core { inherit pkgs; })
     (import ../gpiozero { inherit pkgs; })
   ];
 }

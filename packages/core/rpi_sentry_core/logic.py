@@ -1,64 +1,16 @@
 import gpiozero
 import math
-import pydantic as p
 import time
-import typing
+import rpi_sentry_core.api as api
 
 
-def generateTimestamp():
+def generate_timestamp():
     return time.time_ns()
 
 
-def sleep(duration):
-    time.sleep(duration / 1e9)
-
-
-class SensorReadings(p.BaseModel):
-    motion_1: float
-    motion_2: float
-    sound: float
-
-    def update_motion_1(self, timestamp):
-        self.motion_1 = timestamp
-
-    def update_motion_2(self, timestamp):
-        self.motion_2 = timestamp
-
-    def update_sound(self, timestamp):
-        self.sound = timestamp
-
-    def get_motion_rank_1(self, window, now):
-        return rank(window, now - self.motion_1)
-
-    def get_motion_rank_2(self, window, now):
-        return rank(window, now - self.motion_2)
-
-    def get_sound_rank(self, window, now):
-        return rank(window, now - self.sound)
-
-
-class TriggerEvent(p.BaseModel):
-    rank: float
-    timestamp: float
-
-
-class Pins(p.BaseModel):
-    motion_sensor_1: p.PositiveInt
-    motion_sensor_2: p.PositiveInt
-    sound_sensor: p.PositiveInt
-
-
-class Weights(p.BaseModel):
-    motion: p.PositiveInt
-    sound: p.PositiveInt
-
-
-class Config(p.BaseModel):
-    action: typing.Callable[[TriggerEvent], None]
-    frequency: p.PositiveInt
-    pins: Pins
-    weights: Weights
-    window: p.PositiveInt
+def sleep_for(duration):
+    if duration > 0:
+        time.sleep(duration / 1e9)
 
 
 def rank(window, delta):
@@ -74,47 +26,49 @@ def rank(window, delta):
 def presence_rank(
     weight_sound_sensor, weight_motion_sensor, window, now, sensor_readings
 ):
-    sound = weight_sound_sensor * sensor_readings.get_sound_rank(window, now)
-    motion_1 = weight_motion_sensor * sensor_readings.get_motion_rank_1(window, now)
-    motion_2 = weight_motion_sensor * sensor_readings.get_motion_rank_2(window, now)
+    sound = weight_sound_sensor * rank(window, now - sensor_readings.sound)
+    motion_1 = weight_motion_sensor * rank(window, now - sensor_readings.motion_1)
+    motion_2 = weight_motion_sensor * rank(window, now - sensor_readings.motion_2)
 
     return sound + motion_1 + motion_2
 
 
 def run(external_config, external_state):
-    config = Config(**external_config)
-    sensor_readings = SensorReadings(**external_state)
+    config = api.Config(**external_config)
+    sensor_readings = api.SensorReadings(**external_state)
 
     sound_sensor = gpiozero.MotionSensor(config.pins.sound_sensor)
     motion_sensor_1 = gpiozero.MotionSensor(config.pins.motion_sensor_1)
     motion_sensor_2 = gpiozero.MotionSensor(config.pins.motion_sensor_2)
 
-    sound_sensor.when_motion = lambda: sensor_readings.update_sound(generateTimestamp())
+    def update_sound():
+        sensor_readings.sound = generate_timestamp()
 
-    motion_sensor_1.when_motion = lambda: sensor_readings.update_motion_1(
-        generateTimestamp()
-    )
-    motion_sensor_2.when_motion = lambda: sensor_readings.update_motion_2(
-        generateTimestamp()
-    )
+    def update_motion_1():
+        sensor_readings.motion_1 = generate_timestamp()
 
-    max_sleep_time = 1e-9 / config.frequency
+    def update_motion_2():
+        sensor_readings.motion_2 = generate_timestamp()
+
+    sound_sensor.when_motion = update_sound
+    motion_sensor_1.when_motion = update_motion_1
+    motion_sensor_2.when_motion = update_motion_2
+
+    max_sleep_time = 1e9 / config.frequency
 
     weight_total = config.weights.motion + config.weights.sound
     weight_sound_sensor = config.weights.sound / weight_total
     weight_motion_sensor = (config.weights.motion / 2) / weight_total
 
     while True:
-        now = generateTimestamp()
+        now = generate_timestamp()
         rank = presence_rank(
             weight_sound_sensor,
             weight_motion_sensor,
-            config.window,
+            config.window * 1e9,
             now,
             sensor_readings,
         )
-        config.action(TriggerEvent(rank=rank, timestamp=now))
-        time_elapsed = generateTimestamp() - now
-        sleep_time = max_sleep_time - time_elapsed
-        if sleep_time > 0:
-            time.sleep(sleep_time)
+        config.action(api.TriggerEvent(rank=rank, timestamp=now))
+        time_elapsed = generate_timestamp() - now
+        sleep_for(max_sleep_time - time_elapsed)
