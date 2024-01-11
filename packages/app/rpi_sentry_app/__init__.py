@@ -1,8 +1,12 @@
+import logging
+import os
 import rpi_sentry_core.camera as camera
 import rpi_sentry_core.trigger as trigger
 import rpi_sentry_core.logic as logic
 from fs import open_fs
 import tempfile
+
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "WARNING"))
 
 
 def main():

@@ -25,8 +25,15 @@ let
       meta = with pkgs.lib; { };
     };
 
-  mkPoetryApp = conf:
-    pkgs.python3Packages.buildPythonApplication (mkSpec conf);
+  mkPoetryApp = conf: enableDebug:
+    let
+      makeWrapperArgs =
+        if enableDebug
+        then [ "--set LOGLEVEL DEBUG" ]
+        else [ "--set LOGLEVEL INFO" ];
+      spec = (mkSpec conf) // { inherit makeWrapperArgs; };
+    in
+    pkgs.python3Packages.buildPythonApplication spec;
 
   mkPoetryPackage = conf:
     pkgs.python3Packages.buildPythonPackage (mkSpec conf);

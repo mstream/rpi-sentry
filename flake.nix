@@ -10,9 +10,11 @@
       pkgs = import inputs.nixpkgs { inherit system; };
       packages = {
         app = import ./packages/app { inherit pkgs; };
+        appDebug = import ./packages/app { inherit pkgs; enableDebug = true; };
         core = import ./packages/core { inherit pkgs; };
         gpiozero = import ./packages/gpiozero { inherit pkgs; };
         sandbox = import ./packages/sandbox { inherit pkgs; };
+        sandboxDebug = import ./packages/sandbox { inherit pkgs; enableDebug = true; };
         tkgpio = import ./packages/tkgpio { inherit pkgs; };
       };
       apps = {
@@ -20,15 +22,23 @@
           type = "app";
           program = "${packages.app}/bin/app";
         };
+        appDebug = {
+          type = "app";
+          program = "${packages.appDebug}/bin/app";
+        };
         sandbox = {
           type = "app";
           program = "${packages.sandbox}/bin/sandbox";
+        };
+        sandboxDebug = {
+          type = "app";
+          program = "${packages.sandboxDebug}/bin/sandbox";
         };
       };
     in
     {
       apps.${system} = {
-        inherit (apps) app sandbox;
+        inherit (apps) app appDebug sandbox sandboxDebug;
         default = apps.sandbox;
       };
       devShell.${ system} = pkgs.mkShell {
@@ -39,7 +49,7 @@
         '';
       };
       packages.${system} = {
-        inherit (packages) app core gpiozero sandbox tkgpio;
+        inherit (packages) app appDebug core gpiozero sandbox sandboxDebug tkgpio;
         default = packages.sandbox;
       };
     };

@@ -20,7 +20,7 @@ def file_path(trigger_event):
     return CaptureFilePath(dir_name=dir_name, file_base_name=file_base_name)
 
 
-def activate(cam, fs):
+def activate(cam):
     def cb(trigger_event):
         if trigger_event.rank >= 0.5:
             path = file_path(trigger_event)

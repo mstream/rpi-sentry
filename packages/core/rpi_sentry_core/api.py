@@ -9,14 +9,14 @@ class Camera:
 
 
 class SensorReadings(p.BaseModel):
-    motion_1: float
-    motion_2: float
-    sound: float
+    motion_1: p.StrictFloat
+    motion_2: p.StrictFloat
+    sound: p.StrictFloat
 
 
 class TriggerEvent(p.BaseModel):
-    rank: float
-    timestamp: float
+    rank: p.StrictFloat
+    timestamp: p.StrictInt
 
 
 class Pins(p.BaseModel):

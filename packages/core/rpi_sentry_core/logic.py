@@ -1,7 +1,10 @@
 import gpiozero
+import logging
 import math
 import time
 import rpi_sentry_core.api as api
+
+logger = logging.getLogger(__name__)
 
 
 def generate_timestamp():
@@ -10,7 +13,9 @@ def generate_timestamp():
 
 def sleep_for(duration):
     if duration > 0:
-        time.sleep(duration / 1e9)
+        duration_in_seconds = duration / 1e9
+        logger.debug("sleeping for %s seconds", duration_in_seconds)
+        time.sleep(duration_in_seconds)
 
 
 def rank(window, delta):
@@ -29,12 +34,24 @@ def presence_rank(
     sound = weight_sound_sensor * rank(window, now - sensor_readings.sound)
     motion_1 = weight_motion_sensor * rank(window, now - sensor_readings.motion_1)
     motion_2 = weight_motion_sensor * rank(window, now - sensor_readings.motion_2)
+    total = sound + motion_1 + motion_2
 
-    return sound + motion_1 + motion_2
+    logger.debug(
+        "presence rank: %s (sound) + %s (motion 1) + %s (motion 2) = %s (total)",
+        sound,
+        motion_1,
+        motion_2,
+        total,
+    )
+
+    return total
 
 
 def run(external_config, external_state):
     config = api.Config(**external_config)
+
+    logger.info("configuration: %s", config)
+
     sensor_readings = api.SensorReadings(**external_state)
 
     sound_sensor = gpiozero.MotionSensor(config.pins.sound_sensor)
