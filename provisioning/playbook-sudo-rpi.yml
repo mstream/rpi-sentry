@@ -4,7 +4,6 @@
   vars:
     ansible_python_interpreter: python3
   tasks:
-    - debug: msg="Ansible running!"
     - name: Install cURL
       ansible.builtin.apt:
         name: curl
@@ -28,3 +27,14 @@
         repo: https://github.com/mstream/rpi-sentry.git
         dest: ~/rpi-sentry
         version: master
+    - name: Build RPI Sentry
+      become_user: pi
+      ansible.builtin.shell: |
+        PATH=${PATH}:/home/pi/.nix-profile/bin
+        nix \
+          --extra-experimental-features flakes \
+          --extra-experimental-features nix-command \
+          build ./#appDebug
+      args:
+        chdir: ~/rpi-sentry
+        creates: ~/nix/rpi-sentry/result
