@@ -9,7 +9,7 @@
   outputs = inputs:
     let
       name = "rpi-sentry";
-      systems = [ "aarch64-darwin" "aarch64-linux" ];
+      systems = [ "aarch64-darwin" "aarch64-linux" "armv7l-linux" ];
       systemOutputs = system:
         let
           pkgs = import inputs.nixpkgs { inherit system; };
