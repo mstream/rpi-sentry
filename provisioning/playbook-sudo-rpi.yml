@@ -5,3 +5,26 @@
     ansible_python_interpreter: python3
   tasks:
     - debug: msg="Ansible running!"
+    - name: Install cURL
+      ansible.builtin.apt:
+        name: curl
+        state: present
+    - name: Install Git
+      ansible.builtin.apt:
+        name: git
+        state: present
+    - name: Install XZ utils
+      ansible.builtin.apt:
+        name: xz-utils
+        state: present
+    - name: Install Nix
+      become_user: pi
+      ansible.builtin.script: install-nix.sh
+      args:
+        creates: /nix
+    - name: RPI Sentry checkout
+      become_user: pi
+      ansible.builtin.git:
+        repo: https://github.com/mstream/rpi-sentry.git
+        dest: ~/rpi-sentry
+        version: master
