@@ -15,7 +15,7 @@ def main():
         fs = open_fs(tmp_dir_name)
 
         logic_conf = {
-            "action": trigger.activate(camera.RealCamera(), fs),
+            "action": trigger.activate(camera.RealCamera()),
             "frequency": 2,
             "pins": {"sound_sensor": 1, "motion_sensor_1": 2, "motion_sensor_2": 3},
             "weights": {
