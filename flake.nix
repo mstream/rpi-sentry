@@ -20,6 +20,7 @@
             gpiozero = import ./packages/gpiozero { inherit pkgs; };
             sandbox = import ./packages/sandbox { inherit pkgs; };
             sandboxDebug = import ./packages/sandbox { inherit pkgs; enableDebug = true; };
+            sourceDist = import ./packages/source-dist { inherit pkgs; };
             tkgpio = import ./packages/tkgpio { inherit pkgs; };
           };
           buildApps = packages: {
@@ -56,13 +57,13 @@
           };
           devShell = pkgs.mkShell {
             inherit name;
-            inputsFrom = [ packages.sandbox ];
+            buildInputs = [ pkgs.ansible ];
             shellHook = ''
               PS1="\[\e[33m\][\[\e[m\]\[\e[34;40m\]${name}:\[\e[m\]\[\e[36m\]\w\[\e[m\]\[\e[33m\]]\[\e[m\]\[\e[32m\]\\$\[\e[m\] "
             '';
           };
           packages = rec {
-            inherit (buildPackages pkgs) app appDebug core gpiozero sandbox sandboxDebug tkgpio;
+            inherit (buildPackages pkgs) app appDebug core gpiozero sandbox sandboxDebug sourceDist tkgpio;
             default = sandbox;
             app-cross-armv7l-linux = (buildPackages pkgs.pkgsCross.armv7l-hf-multiplatform).app;
             appDebug-cross-armv7l-linux = (buildPackages pkgs.pkgsCross.armv7l-hf-multiplatform).appDebug;

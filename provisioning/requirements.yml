@@ -1,0 +1,6 @@
+---
+roles:
+  - name:
+    src: https://github.com/ikaruswill/ansible-roles.git
+    version: main
+    scm: git
