@@ -12,17 +12,42 @@ logger = logging.getLogger(__name__)
 picam2 = Picamera2()
 
 buffer_count = 10
-sensor_size = (2304, 1296)
-output_size = (1492, sensor_size[1])
-horizontal_crop = sensor_size[0] - output_size[0]
+sensor_size_factor = 2
+af_window_factor = 3
 frames_per_second = 10
-bitrate = 5000000
+
+real_sensor_size = (4608, 2592)
+
+sensor_size = (
+    round(real_sensor_size[0] / sensor_size_factor),
+    round(real_sensor_size[1] / sensor_size_factor),
+)
+
+output_size = (sensor_size[0] - 812, sensor_size[1])
+horizontal_crop = sensor_size[0] - output_size[0]
+af_window_size = (
+    round(real_sensor_size[0] / af_window_factor),
+    round(real_sensor_size[1] / af_window_factor),
+)
 
 frame_duration = round(1000000 / frames_per_second)
 
 video_config = picam2.create_video_configuration(
     buffer_count=buffer_count,
     controls={
+        "AfMode": libcamera.controls.AfModeEnum.Continuous,
+        "AfWindows": [
+            (
+                round(af_window_size[0] / 2),
+                round(af_window_size[1] / 2),
+                real_sensor_size[0] - af_window_size[0],
+                real_sensor_size[1] - af_window_size[1],
+            )
+        ],
+        "AwbEnable": True,
+        "AwbMode": libcamera.controls.AwbModeEnum.Auto,
+        "AfRange": libcamera.controls.AfRangeEnum.Normal,
+        "AfSpeed": libcamera.controls.AfSpeedEnum.Fast,
         "FrameDurationLimits": (frame_duration, frame_duration),
         "NoiseReductionMode": libcamera.controls.draft.NoiseReductionModeEnum.Off,
         "ScalerCrop": (
@@ -49,6 +74,7 @@ encoder = H264Encoder(bitrate=None, repeat=False, iperiod=None)
 class RealCamera(api.Camera):
     def __init__(self, root_dir_path):
         self.root_dir_path = root_dir_path
+        logger.debug("camera properties %s", picam2.camera_properties)
         logger.debug("camera configuration %s", picam2.camera_configuration())
 
     def shoot(self, rank, path):
