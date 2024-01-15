@@ -11,20 +11,30 @@ logger = logging.getLogger(__name__)
 
 picam2 = Picamera2()
 
-buffer_count = 10
+buffer_count = 15
 sensor_size_factor = 2
 af_window_factor = 3
-frames_per_second = 10
+frames_per_second = 15
 
 real_sensor_size = (4608, 2592)
 
-sensor_size = (
+cropped_real_sensor_size = (real_sensor_size[0] - 1624, real_sensor_size[1])
+
+crop_margin_size = (
+    real_sensor_size[0] - cropped_real_sensor_size[0],
+    real_sensor_size[1] - cropped_real_sensor_size[1],
+)
+
+scaled_sensor_size = (
     round(real_sensor_size[0] / sensor_size_factor),
     round(real_sensor_size[1] / sensor_size_factor),
 )
 
-output_size = (sensor_size[0] - 812, sensor_size[1])
-horizontal_crop = sensor_size[0] - output_size[0]
+output_size = (
+    round(cropped_real_sensor_size[0] / sensor_size_factor),
+    round(cropped_real_sensor_size[1] / sensor_size_factor),
+)
+
 af_window_size = (
     round(real_sensor_size[0] / af_window_factor),
     round(real_sensor_size[1] / af_window_factor),
@@ -35,6 +45,7 @@ frame_duration = round(1000000 / frames_per_second)
 video_config = picam2.create_video_configuration(
     buffer_count=buffer_count,
     controls={
+        "AfMetering": libcamera.controls.AfMeteringEnum.Windows,
         "AfMode": libcamera.controls.AfModeEnum.Continuous,
         "AfWindows": [
             (
@@ -51,10 +62,10 @@ video_config = picam2.create_video_configuration(
         "FrameDurationLimits": (frame_duration, frame_duration),
         "NoiseReductionMode": libcamera.controls.draft.NoiseReductionModeEnum.Off,
         "ScalerCrop": (
-            round(horizontal_crop / 2),
-            0,
-            sensor_size[0] - horizontal_crop,
-            sensor_size[1],
+            round(crop_margin_size[0] / 2),
+            round(crop_margin_size[1] / 2),
+            cropped_real_sensor_size[0],
+            cropped_real_sensor_size[1],
         ),
     },
     display=None,
@@ -62,7 +73,7 @@ video_config = picam2.create_video_configuration(
     lores=None,
     main={"format": "YUV420", "size": output_size},
     queue=True,
-    sensor={"bit_depth": 10, "output_size": output_size},
+    sensor={"bit_depth": 10, "output_size": scaled_sensor_size},
 )
 
 picam2.configure(video_config)
