@@ -22,9 +22,9 @@ def file_path(trigger_event):
 
 def activate(cam):
     def cb(trigger_event):
-        if trigger_event.rank >= 0.5:
+        if trigger_event.rank >= 0.0:
             path = file_path(trigger_event)
             print(trigger_event)
-            cam.shoot(trigger_event.rank, path)
+            cam.update(trigger_event.rank, path)
 
     return cb

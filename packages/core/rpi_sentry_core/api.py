@@ -4,7 +4,7 @@ import typing
 
 
 class Camera:
-    def shoot(self, rank: float, path: trigger.CaptureFilePath) -> None:
+    def update(self, rank: float, path: trigger.CaptureFilePath) -> None:
         pass
 
 

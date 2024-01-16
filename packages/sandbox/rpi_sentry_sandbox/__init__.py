@@ -21,7 +21,7 @@ class FakeCamera(api.Camera):
         os.makedirs(dir_path, exist_ok=True)
         return dir_path
 
-    def shoot(self, rank, path):
+    def update(self, rank, path):
         dir_path = self.create_dir(path)
         file_path = os.path.join(
             dir_path,

@@ -1,0 +1,25 @@
+<body>
+  <video id="videoPlayer" controls></video>
+  <script src="dash.all.min.js"></script>
+  <script>
+    (function () {
+      var url = "http://192.168.0.75:8000/stream.mpd";
+      var player = dashjs.MediaPlayer().create();
+      player.initialize(document.querySelector("#videoPlayer"), url, true);
+      player.updateSettings({
+        streaming: {
+              delay: {
+                liveDelay: 4
+             },
+             liveCatchup: {
+                maxDrift: 0,
+                playbackRate: {
+                   min: 0.5
+                   max: 0.5
+                }
+              }
+        }
+      });
+    })();
+  </script>
+</body>

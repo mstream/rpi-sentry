@@ -22,6 +22,7 @@
             sandboxDebug = import ./packages/sandbox { inherit pkgs; enableDebug = true; };
             sourceDist = import ./packages/source-dist { inherit pkgs; };
             tkgpio = import ./packages/tkgpio { inherit pkgs; };
+            webapp = import ./packages/webapp { inherit pkgs; };
           };
           buildApps = packages: {
             app = {
@@ -63,7 +64,7 @@
             '';
           };
           packages = rec {
-            inherit (buildPackages pkgs) app appDebug core gpiozero sandbox sandboxDebug sourceDist tkgpio;
+            inherit (buildPackages pkgs) app appDebug core gpiozero sandbox sandboxDebug sourceDist tkgpio webapp;
             default = sandbox;
             app-cross-armv7l-linux = (buildPackages pkgs.pkgsCross.armv7l-hf-multiplatform).app;
             appDebug-cross-armv7l-linux = (buildPackages pkgs.pkgsCross.armv7l-hf-multiplatform).appDebug;

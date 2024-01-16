@@ -23,6 +23,11 @@
         name: python3-gpiozero
         state: present
         install_recommends: false
+    - name: Install numpy
+      ansible.builtin.apt:
+        name: python3-numpy
+        state: present
+        install_recommends: false
     - name: Install pydantic
       ansible.builtin.apt:
         name: python3-pydantic
