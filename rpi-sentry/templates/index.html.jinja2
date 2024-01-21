@@ -1,12 +1,17 @@
 <!doctype html>
 <html>
   <head>
+    <link rel="stylesheet" href="static/index.css">
     <script src="static/bundle.js"></script>
   </head>
-  <body>
-    <p id="state"></p>
-    <p id="space"></p>
+  <body class="container">
+    <div id="info">
+      <p id="state"></p>
+      <p id="space"></p>
+    </div>
+    <div id="title">RPI Sentry</div>
     <div id="preview"></div>
+    <div id="version">version 1.0</div>
     <script type="text/javascript">
       start({{ schemaJson | tojson }})
     </script>

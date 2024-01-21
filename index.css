@@ -1,0 +1,44 @@
+.container {
+  display: grid;
+  gap: 10px;
+  grid-template-areas:
+    "header header header"
+    "aside aside aside"
+    "content content content"
+    "content content content"
+    "content content content"
+    "content content content"
+    "footer footer footer";
+}
+
+@media (min-aspect-ratio: 8/5) {
+  .container {
+    grid-template-areas:
+      "aside header header header"
+      "aside content content content"
+      "aside content content content"
+      "aside footer footer footer";
+  }
+}
+
+#info {
+  grid-area: aside;
+}
+
+#title {
+  grid-area: header;
+}
+
+#preview {
+  grid-area: content;
+}
+
+#version {
+  grid-area: footer;
+}
+
+#preview img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}

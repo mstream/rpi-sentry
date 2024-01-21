@@ -8,7 +8,6 @@ function bufferToImage(bytes) {
       URL.revokeObjectURL(url);
       resolve(img);
     };
-    img.style = "height:50%;";
     img.src = url;
   });
 }
@@ -28,9 +27,11 @@ function start(schemaJson) {
     ws.onmessage = function (evt) {
       console.log("new preview frame received");
       const update = updateType.fromBuffer(Buffer.from(evt.data));
-      bufferToImage(update.previewImage.bytes).then((img) =>
-        document.getElementById("preview").replaceChildren(img),
-      );
+      if (update.previewImage) {
+        bufferToImage(update.previewImage.bytes).then((img) =>
+          document.getElementById("preview").replaceChildren(img),
+        );
+      }
       document.getElementById("state").innerText = `State: ${update.state}`;
       document.getElementById(
         "space",

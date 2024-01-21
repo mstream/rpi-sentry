@@ -31,16 +31,16 @@ async def handle_camera(app: web.Application):
         camera = app[camera_key]
         while True:
             websockets = app[websockets_key]
-            state, preview_image = camera.update()
+            camera.update()
             _, _, bytes_free = shutil.disk_usage("/")
             writer = avro.io.DatumWriter(schema)
             bytes_writer = io.BytesIO()
             encoder = avro.io.BinaryEncoder(bytes_writer)
             writer.write(
                 {
-                    "previewImage": preview_image,
+                    "previewImage": camera.preview_image,
                     "spaceRemaining": round(bytes_free / 2**30, 2),
-                    "state": state.name,
+                    "state": camera.state.name,
                 },
                 encoder,
             )
