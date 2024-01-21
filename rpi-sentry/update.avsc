@@ -1,0 +1,23 @@
+{
+    "namespace": "rpisentry.avro",
+    "name": "Update",
+    "type": "record",
+    "fields": [
+        {
+          "name": "previewImage",
+          "type": ["bytes", "null"]
+        },
+        {
+          "name": "spaceRemaining",
+          "type": "double"
+        },
+        {
+            "name": "state",
+            "type": {
+                "type": "enum",
+                "name": "State",
+                "symbols": ["IDLING", "MOTION_SENSING", "RECORDING"]
+            }
+        }
+    ]
+}

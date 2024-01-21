@@ -1,3 +1,5 @@
 .hypothesis
 __pycache__
+node_modules
 result
+rpi-sentry/static/*

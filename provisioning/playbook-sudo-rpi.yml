@@ -13,28 +13,16 @@
       mem_limit: 128M
       disk_size: 256M
   tasks:
-    - name: Install Picamera2
+    - name: Install Python libraries
       ansible.builtin.apt:
-        name: python3-picamera2
+        name: python3-{{ item }}
         state: present
         install_recommends: false
-    - name: Install gpiozero
-      ansible.builtin.apt:
-        name: python3-gpiozero
-        state: present
-        install_recommends: false
-    - name: Install numpy
-      ansible.builtin.apt:
-        name: python3-numpy
-        state: present
-        install_recommends: false
-    - name: Install pydantic
-      ansible.builtin.apt:
-        name: python3-pydantic
-        state: present
-        install_recommends: false
-    - name: Install RPI.GPIO
-      ansible.builtin.apt:
-        name: python3-rpi.gpio
-        state: present
-        install_recommends: false
+      loop:
+        - aiohttp
+        - aiohttp-jinja2
+        - avro
+        - gpiozero
+        - opencv
+        - picamera2
+        - rpi.gpio
