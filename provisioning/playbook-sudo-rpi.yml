@@ -1,9 +1,11 @@
 ---
 - hosts: all
   become: true
-  roles: [zram]
   vars:
     ansible_python_interpreter: python3
+    boot_config:
+      dtparam: audio=off
+      dtoverlay: vc4-kms-v3d,cma-320
     zram_log:
       alg: zstd
       mem_limit: 32M
@@ -12,7 +14,57 @@
       alg: zstd
       mem_limit: 128M
       disk_size: 256M
+  environment:
+    GIT_SSL_NO_VERIFY: 'true'
+  pre_tasks:
+    - name: Copy over authorized SSH public key
+      ansible.posix.authorized_key:
+        user: '{{ ansible_user }}'
+        state: present
+        key: '{{ lookup("file", lookup("env","HOME") + "/.ssh/id_rsa.pub") }}'
+    - name: Install playbook dependencies
+      ansible.builtin.apt:
+        name: '{{ item }}'
+        state: present
+        install_recommends: false
+      loop: [git, python3]
   tasks:
+    - name: Disable unnecessary services
+      ansible.builtin.systemd_service:
+        name: '{{ item }}'
+        enabled: false
+        state: stopped
+      loop:
+        - alsa-utils
+        - apparmor
+        - bluetooth
+        - console-setup.sh
+        - cron
+        - dphys-swapfile
+        - hwclock.sh
+        - keyboard-setup.sh
+        - nfs-common
+        - paxctld
+        - raspi-config
+        - rpcbind
+        - rsync
+        - sudo
+        - triggerhappy
+        - x11-common
+    - name: Update system settings
+      ansible.posix.sysctl:
+        name: '{{ item.name }}'
+        value: '{{ item.value }}'
+        state: present
+      loop:
+        - name: vm.dirty_ratio
+          value: '50'
+        - name: vm.dirty_background_ratio
+          value: '1'
+        - name: vm.swappiness
+          value: '100'
+        - name: vm.vfs_cache_pressure
+          value: '500'
     - name: Install Python libraries
       ansible.builtin.apt:
         name: python3-{{ item }}
@@ -26,3 +78,9 @@
         - opencv
         - picamera2
         - rpi.gpio
+    - name: Set up ZRAM swap partition
+      ansible.builtin.include_role:
+        name: zram
+    - name: Tweak boot configuration
+      ansible.builtin.include_role:
+        name: rpi_boot_config

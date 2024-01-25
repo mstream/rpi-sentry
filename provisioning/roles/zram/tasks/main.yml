@@ -4,11 +4,8 @@
   register: zram_installed_result
   changed_when: false
   failed_when: false
-
-- include: zram-uninstall.yml
+- ansible.builtin.include_tasks: zram-uninstall.yml
   when: zram_installed_result.rc == 0 and zram_upgrade
-
-- include: zram-install.yml
+- ansible.builtin.include_tasks: zram-install.yml
   when: zram_installed_result.rc == 1 or (zram_installed_result.rc == 0 and zram_upgrade)
-
-- include: zram-config.yml
+- ansible.builtin.include_tasks: zram-config.yml
