@@ -1,0 +1,10 @@
+---
+- name: Retrieve root partition UUID
+  ansible.builtin.shell:
+    cmd: blkid -o export /dev/mmcblk0p2 | grep PARTUUID
+  register: blkid_result
+- name: Setup kernel cmdline
+  ansible.builtin.copy:
+    content: root={{ blkid_result.stdout }} {{ cmdline }}
+    dest: /boot/firmware/cmdline.txt
+  notify: reboot

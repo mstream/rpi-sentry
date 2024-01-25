@@ -1,0 +1,31 @@
+---
+- ansible.builtin.set_fact:
+    config_file: /boot/firmware/config.txt
+- name: Get config file contents before
+  ansible.builtin.shell:
+    cmd: cat {{ config_file }}
+  register: before
+- name: Clear config file
+  ansible.builtin.copy:
+    dest: '{{ config_file }}'
+    content: ''
+- name: Insert lines to boot config file
+  ansible.builtin.lineinfile:
+    line: '{{ item }}'
+    dest: '{{ config_file }}'
+    regexp: ^{{ item }}
+  with_items: '{{ boot_config_lines }}'
+- name: Insert entries to boot config file
+  ansible.builtin.lineinfile:
+    line: '{{ item.key }}={{ item.value }}'
+    dest: '{{ config_file }}'
+    regexp: ^{{ item.key }}=
+  with_dict: '{{ boot_config }}'
+- name: Get config file contents after
+  ansible.builtin.shell:
+    cmd: cat {{ config_file }}
+  register: after
+- name: Notifying handlers
+  ansible.builtin.shell: 'true'
+  changed_when: after.stdout != before.stdout
+  notify: [reboot]

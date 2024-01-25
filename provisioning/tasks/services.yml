@@ -1,0 +1,30 @@
+---
+- name: Enable necessary services
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: true
+    masked: false
+    state: started
+  loop: [ssh]
+- name: Disable unnecessary services
+  ansible.builtin.systemd_service:
+    name: '{{ item }}'
+    enabled: false
+    masked: true
+    state: stopped
+  loop:
+    - alsa-utils
+    - apparmor
+    - bluetooth
+    - console-setup.sh
+    - cron
+    - dphys-swapfile
+    - hwclock.sh
+    - keyboard-setup.sh
+    - nfs-common
+    - raspi-config
+    - rpcbind
+    - rsync
+    - sudo
+    - triggerhappy
+    - x11-common

@@ -4,8 +4,25 @@
   vars:
     ansible_python_interpreter: python3
     boot_config:
-      dtparam: audio=off
-      dtoverlay: vc4-kms-v3d,cma-320
+      arm_64bit: '1'
+      arm_boost: '1'
+      camera_auto_detect: '1'
+      display_auto_detect: '0'
+      disable_fw_kms_setup: '1'
+      disable_overscan: '1'
+      display_auto_detect: '1'
+      max_framebuffers: '2'
+      # arm_freq: '600'
+      # arm_freq_min: '600'
+      # over_voltage: '-8'
+      # over_voltage_min: '-8'
+    boot_config_lines:
+      - dtoverlay=disable-bt
+      - dtoverlay=vc4-kms-v3d,cma-320
+      - dtparam=audio=off
+    cmdline: console=serial0,115200 console=tty1 rootfstype=ext4 fsck.repair=yes
+      rootwait cfg80211.ieee80211_regdom=GB
+    swap_file_path: /var/swap
     zram_log:
       alg: zstd
       mem_limit: 32M
@@ -16,41 +33,40 @@
       disk_size: 256M
   environment:
     GIT_SSL_NO_VERIFY: 'true'
+  handlers:
+    - name: reboot
+      ansible.builtin.reboot:
+        reboot_timeout: 300
   pre_tasks:
     - name: Copy over authorized SSH public key
       ansible.posix.authorized_key:
         user: '{{ ansible_user }}'
         state: present
         key: '{{ lookup("file", lookup("env","HOME") + "/.ssh/id_rsa.pub") }}'
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
     - name: Install playbook dependencies
       ansible.builtin.apt:
         name: '{{ item }}'
-        state: present
+        state: latest
         install_recommends: false
-      loop: [git, python3]
+        update_cache: false
+      loop: [git, openssh-server, python3]
   tasks:
-    - name: Disable unnecessary services
-      ansible.builtin.systemd_service:
-        name: '{{ item }}'
-        enabled: false
-        state: stopped
-      loop:
-        - alsa-utils
-        - apparmor
-        - bluetooth
-        - console-setup.sh
-        - cron
-        - dphys-swapfile
-        - hwclock.sh
-        - keyboard-setup.sh
-        - nfs-common
-        - paxctld
-        - raspi-config
-        - rpcbind
-        - rsync
-        - sudo
-        - triggerhappy
-        - x11-common
+    - name: Set up services
+      ansible.builtin.include_tasks:
+        file: tasks/services.yml
+    - name: Tweak boot configuration
+      ansible.builtin.include_tasks:
+        file: tasks/{{ item }}
+      loop: [rpi-boot-config.yml, rpi-cmdline.yml]
+    - name: Set up swap file
+      ansible.builtin.include_role:
+        name: swap
+    - name: Set up ZRAM swap partition
+      ansible.builtin.include_role:
+        name: zram
     - name: Update system settings
       ansible.posix.sysctl:
         name: '{{ item.name }}'
@@ -65,22 +81,6 @@
           value: '100'
         - name: vm.vfs_cache_pressure
           value: '500'
-    - name: Install Python libraries
-      ansible.builtin.apt:
-        name: python3-{{ item }}
-        state: present
-        install_recommends: false
-      loop:
-        - aiohttp
-        - aiohttp-jinja2
-        - avro
-        - gpiozero
-        - opencv
-        - picamera2
-        - rpi.gpio
-    - name: Set up ZRAM swap partition
-      ansible.builtin.include_role:
-        name: zram
-    - name: Tweak boot configuration
-      ansible.builtin.include_role:
-        name: rpi_boot_config
+    - name: Set up python
+      ansible.builtin.include_tasks:
+        file: tasks/services.yml
