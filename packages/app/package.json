@@ -12,6 +12,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "avro-js": "^1.11.3"
+    "avro-js": "^1"
+  },
+  "devDependencies": {
+    "browserify": "^17"
   }
 }

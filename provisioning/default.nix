@@ -10,25 +10,20 @@ let
       version = "0.0.1";
       src = pkgs.lib.cleanSource ./.;
     };
-  provision = host:
-    pkgs.writeShellApplication {
-      name = "provision-${host}";
+  provision = { host, name, port }:
+    let extraVars = "ansible_port=${builtins.toString port} arducam=true";
+    in pkgs.writeShellApplication {
+      name = "provision-${name}";
       runtimeInputs = [ pkgs.ansible ];
       text = ''
         cd ${sources}
-        ansible-playbook -i hosts -l ${host}-rpi playbook-sudo-rpi.yml
+        ansible-playbook playbook-sudo-rpi.yml --inventory="${host}," --extra-vars "${extraVars}"
       '';
     };
-  provisionApp = isReal:
-    let
-      host = if isReal then "real" else "fake";
-    in
+  provisionApp = hostConfig:
     {
-      program = "${provision host}/bin/provision-${host}";
+      program = "${provision hostConfig}/bin/provision-${hostConfig.name}";
       type = "app";
     };
 in
-{
-  fakeApp = provisionApp false;
-  realApp = provisionApp true;
-}
+provisionApp

@@ -1,0 +1,19 @@
+---
+- name: Create temporary directory
+  become: false
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: arducam
+  register: tmp
+- name: Download Pivariety installer script
+  become: false
+  ansible.builtin.get_url:
+    url: https://github.com/ArduCAM/Arducam-Pivariety-V4L2-Driver/releases/download/install_script/install_pivariety_pkgs.sh
+    dest: '{{ tmp.path }}/install_pivariety_pkgs.sh'
+    mode: '0744'
+- name: Install Privariety packages
+  become: false
+  ansible.builtin.shell:
+    cmd: '{{ tmp.path }}/install_pivariety_pkgs.sh -p {{ item }}'
+  loop: [libcamera, libcamera_apps_bookworm, ov64a40_kernel_driver]
+  notify: reboot

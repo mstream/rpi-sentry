@@ -1,4 +1,5 @@
 from aiohttp import web
+from aiohttp.web_runner import GracefulExit
 import aiohttp_jinja2
 import avro.io
 import avro.schema
@@ -50,8 +51,11 @@ async def handle_camera(app: web.Application):
             await asyncio.sleep(1)
     except asyncio.CancelledError:
         print("camera cancelled")
+    except Exception as err:
+        print(f"Unexpected {err=}, {type(err)=}")
     finally:
         print("camera shutdown")
+        raise GracefulExit()
 
 
 async def on_startup(app: web.Application):
