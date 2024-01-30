@@ -25,6 +25,7 @@ in
       cp src/update.avsc ${dir}/
     '';
   };
+
   mkDerivation = {
     src = lib.cleanSource ./.;
   };

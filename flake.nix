@@ -10,30 +10,26 @@
     let
       name = "rpi-sentry";
       system = "aarch64-darwin";
-      fakeHostConfig = { host = "localhost"; name = "fake"; port = 2022; };
-      realHostConfig = { host = "192.168.0.96"; name = "real"; port = 22; };
       pkgs = import inputs.nixpkgs { inherit system; };
-      docker = import ./docker { inherit pkgs; };
-      provisioning = import ./provisioning { inherit pkgs; };
       packages = inputs.dream2nix.lib.importPackages {
         projectRoot = ./.;
         projectRootFile = "flake.nix";
         packagesDir = ./packages;
         packageSets.nixpkgs = pkgs;
-      };
-      deploy = import ./deploy.nix {
-        inherit pkgs;
-        sources = packages.app;
+        packageSets.self = inputs.self.packages.${system};
       };
     in
     {
       packages.${system} = packages;
       apps.${system} = {
-        deploy-fake = deploy fakeHostConfig;
-        deploy-real = deploy realHostConfig;
-        run-fake = docker.fakeApp;
-        provision-fake = provisioning fakeHostConfig;
-        provision-real = provisioning realHostConfig;
+        deploy = {
+          program = "${packages.provisioning}/bin/deploy";
+          type = "app";
+        };
+        provision = {
+          program = "${packages.provisioning}/bin/provision";
+          type = "app";
+        };
       };
       devShell.${system} = pkgs.mkShell {
         inherit name;
