@@ -7,6 +7,7 @@ from picamera2.outputs import CircularOutput
 import storage
 import time
 
+Mode = enum.Enum("CameraMode", ["ALWAYS_ON", "AUTOMATIC"])
 State = enum.Enum("State", ["IDLING", "MOTION_SENSING", "RECORDING"])
 
 
@@ -44,6 +45,7 @@ class Camera:
         self.prev_frame = None
         self.recording_start_time = 0
         self.root_dir_path = root_dir_path
+        self.mode = Mode.AUTOMATIC
         self.state = State.IDLING
         self.initialize_picam2(**parameters)
 

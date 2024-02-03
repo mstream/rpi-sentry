@@ -4,6 +4,14 @@
     "type": "record",
     "fields": [
         {
+          "name": "cameraMode",
+          "type": {
+              "type": "enum",
+              "name": "CameraMode",
+              "symbols": ["ALWAYS_ON", "AUTOMATIC"]
+          }
+        },
+        {
           "name": "previewImage",
           "type": ["bytes", "null"]
         },

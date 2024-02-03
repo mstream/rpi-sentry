@@ -6,14 +6,31 @@
   </head>
   <body class="container">
     <div id="info">
-      <p id="state"></p>
-      <p id="space"></p>
+      <fieldset>
+        <legend>Camera mode</legend>
+        <div>
+          <input type="radio" id="alwaysOn" name="cameraMode"/>
+          <label for="alwaysOn">Always On</label>
+        </div>
+        <div>
+          <input type="radio" id="automatic" name="cameraMode"/>
+          <label for="automatic">Automatic</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>System info</legend>
+        <p id="state"></p>
+        <p id="space"></p>
+      </fielset>
     </div>
     <div id="title">RPI Sentry</div>
     <div id="preview"></div>
     <div id="version">version 1.0</div>
     <script type="text/javascript">
-      start({{ schemaJson | tojson }})
+      start(
+        {{ requestSchemaJson | tojson }},
+        {{ updateSchemaJson | tojson }},
+      )
     </script>
   </body>
 </html>

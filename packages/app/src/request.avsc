@@ -1,0 +1,6 @@
+{
+    "namespace": "rpisentry.avro",
+    "name": "Request",
+    "type": "enum",
+    "symbols" : ["SET_CAMERA_MODE_ALWAYS_ON", "SET_CAMERA_MODE_AUTOMATIC"]
+}

@@ -4,7 +4,7 @@ import aiohttp_jinja2
 import avro.io
 import avro.schema
 import asyncio
-import camera
+from camera import Camera, Mode
 import io
 import jinja2
 import pathlib
@@ -22,30 +22,33 @@ camera_key = app_key("camera")
 camera_handler_key = app_key("camera_handler")
 websockets_key = app_key("websockets")
 
+with open(str(BASE_DIR / "request.avsc"), "rb") as f:
+    requestSchema = avro.schema.parse(f.read())
+    reader = avro.io.DatumReader(requestSchema)
+
 with open(str(BASE_DIR / "update.avsc"), "rb") as f:
-    schema = avro.schema.parse(f.read())
+    updateSchema = avro.schema.parse(f.read())
+    writer = avro.io.DatumWriter(updateSchema)
 
 
 async def handle_camera(app: web.Application):
     try:
-        print("camera init")
+        print("camera initialized")
         camera = app[camera_key]
         while True:
             websockets = app[websockets_key]
             camera.update()
             _, _, bytes_free = shutil.disk_usage("/")
-            writer = avro.io.DatumWriter(schema)
-            bytes_writer = io.BytesIO()
-            encoder = avro.io.BinaryEncoder(bytes_writer)
-            writer.write(
-                {
-                    "previewImage": camera.preview_image,
-                    "spaceRemaining": round(bytes_free / 2**30, 2),
-                    "state": camera.state.name,
-                },
-                encoder,
-            )
-            raw_bytes = bytes_writer.getvalue()
+            message_bytes = io.BytesIO()
+            encoder = avro.io.BinaryEncoder(message_bytes)
+            update_message = {
+                "cameraMode": camera.mode.name,
+                "previewImage": camera.preview_image,
+                "spaceRemaining": round(bytes_free / 2**30, 2),
+                "state": camera.state.name,
+            }
+            writer.write(update_message, encoder)
+            raw_bytes = message_bytes.getvalue()
             for ws in websockets:
                 await ws.send_bytes(raw_bytes)
             await asyncio.sleep(1)
@@ -74,7 +77,10 @@ async def on_shutdown(app: web.Application):
 
 @aiohttp_jinja2.template("index.html.jinja2")
 async def index_handler(request: web.Request):
-    return {"schemaJson": str(schema)}
+    return {
+        "requestSchemaJson": str(requestSchema),
+        "updateSchemaJson": str(updateSchema),
+    }
 
 
 async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
@@ -82,9 +88,20 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     await response.prepare(request)
     request.app[websockets_key].append(response)
     try:
-        print("websocket init")
+        print("websocket initialized")
         async for msg in response:
-            pass
+            message_bytes = io.BytesIO(msg.data)
+            decoder = avro.io.BinaryDecoder(message_bytes)
+            request_message = reader.read(decoder)
+            match request_message:
+                case "SET_CAMERA_MODE_ALWAYS_ON":
+                    camera = request.app[camera_key]
+                    camera.mode = Mode.ALWAYS_ON
+                case "SET_CAMERA_MODE_AUTOMATIC":
+                    camera = request.app[camera_key]
+                    camera.mode = Mode.AUTOMATIC
+                case _:
+                    print(f"Unmatched request message: {request_message}")
         return response
     except asyncio.CancelledError:
         print("websocker cancelled")
@@ -96,7 +113,7 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
 def init() -> web.Application:
     app = web.Application()
     app[websockets_key] = []
-    app[camera_key] = camera.Camera(
+    app[camera_key] = Camera(
         root_dir_path=str(pathlib.Path.home() / "footage"),
     )
     aiohttp_jinja2.setup(

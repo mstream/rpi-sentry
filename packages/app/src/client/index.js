@@ -12,16 +12,22 @@ function bufferToImage(bytes) {
   });
 }
 
-function start(schemaJson) {
-  console.log(`SCHEMA: ${schemaJson}`);
+function start(requestSchemaJson, updateSchemaJson) {
   if ("WebSocket" in window) {
     const ws = new WebSocket(`ws://${window.location.host}/ws`);
     ws.binaryType = "arraybuffer";
 
-    const updateType = avro.parse(JSON.parse(schemaJson));
+    const requestType = avro.parse(JSON.parse(requestSchemaJson));
+    const updateType = avro.parse(JSON.parse(updateSchemaJson));
 
     ws.onopen = function () {
       console.log(`Connected to WS`);
+      document.getElementById("alwaysOn").onchange = function () {
+        ws.send(requestType.toBuffer("SET_CAMERA_MODE_ALWAYS_ON"));
+      };
+      document.getElementById("automatic").onchange = function () {
+        ws.send(requestType.toBuffer("SET_CAMERA_MODE_AUTOMATIC"));
+      };
     };
 
     ws.onmessage = function (evt) {
@@ -36,6 +42,19 @@ function start(schemaJson) {
       document.getElementById(
         "space",
       ).innerText = `Space remaining: ${update.spaceRemaining} GiB`;
+
+      switch (update.cameraMode) {
+        case "ALWAYS_ON":
+          document.getElementById("alwaysOn").checked = true;
+          break;
+
+        case "AUTOMATIC":
+          document.getElementById("automatic").checked = true;
+          break;
+
+        default:
+          break;
+      }
     };
 
     ws.onclose = function () {
