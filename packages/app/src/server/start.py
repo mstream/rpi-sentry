@@ -44,20 +44,28 @@ async def handle_camera(app: web.Application):
                 "sensor3": False,
             }
             camera.update(time.time_ns(), sensor_readings)
-            _, _, bytes_free = shutil.disk_usage("/")
-            message_bytes = io.BytesIO()
-            encoder = avro.io.BinaryEncoder(message_bytes)
-            update_message = {
-                "cameraMode": camera.mode.name,
-                "previewImage": camera.preview_image,
-                "sensorReadings": sensor_readings,
-                "spaceRemaining": round(bytes_free / 2**30, 2),
-                "state": camera.state.name,
-            }
-            writer.write(update_message, encoder)
-            raw_bytes = message_bytes.getvalue()
-            for ws in websockets:
-                await ws.send_bytes(raw_bytes)
+
+            if len(websockets) > 0:
+                _, _, bytes_free = shutil.disk_usage("/")
+                message_bytes = io.BytesIO()
+                encoder = avro.io.BinaryEncoder(message_bytes)
+                update_message = {
+                    "afWindow": {
+                        "x": camera.preview_af_window[0],
+                        "y": camera.preview_af_window[1],
+                        "w": camera.preview_af_window[2],
+                        "h": camera.preview_af_window[3],
+                    },
+                    "cameraMode": camera.mode.name,
+                    "previewImage": camera.preview_image,
+                    "sensorReadings": sensor_readings,
+                    "spaceRemaining": round(bytes_free / 2**30, 2),
+                    "state": camera.state.name,
+                }
+                writer.write(update_message, encoder)
+                raw_bytes = message_bytes.getvalue()
+                for ws in websockets:
+                    await ws.send_bytes(raw_bytes)
             await asyncio.sleep(1)
     except asyncio.CancelledError:
         print("camera cancelled")

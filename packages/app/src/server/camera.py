@@ -60,14 +60,26 @@ class Camera:
         real_sensor_size,
         sensor_size_factor,
     ):
-        af_window_size = (
-            round(real_sensor_size[0] / (1.0 * af_window_factor)),
-            round(real_sensor_size[1] / af_window_factor),
+        af_window_side = min(
+            real_sensor_size[0] // af_window_factor,
+            real_sensor_size[1] // af_window_factor,
+        )
+
+        af_window_margin = (
+            (real_sensor_size[0] - af_window_side) // 2,
+            (real_sensor_size[1] - af_window_side) // 2,
+        )
+
+        af_window = (
+            af_window_margin[0],
+            af_window_margin[1],
+            af_window_side,
+            af_window_side,
         )
 
         scaled_sensor_size = (
-            round(real_sensor_size[0] / sensor_size_factor),
-            round(real_sensor_size[1] / sensor_size_factor),
+            real_sensor_size[0] // sensor_size_factor,
+            real_sensor_size[1] // sensor_size_factor,
         )
 
         w = scaled_sensor_size[0]
@@ -76,11 +88,11 @@ class Camera:
         # H264 4.0 limit
         pixels_limit = 256 * 8144
 
-        while w * h > pixels_limit or w != h:
+        while w * h > pixels_limit or h % 32 != 0 or w != h:
             if h > w:
-                h -= 4
+                h -= 1
             else:
-                w -= 4
+                w -= 1
 
         cropped_real_sensor_size = (w * sensor_size_factor, h * sensor_size_factor)
 
@@ -89,21 +101,56 @@ class Camera:
             real_sensor_size[1] - cropped_real_sensor_size[1],
         )
 
+        scaler_crop = (
+            crop_margin_size[0] // 2,
+            crop_margin_size[1] // 2,
+            cropped_real_sensor_size[0],
+            cropped_real_sensor_size[1],
+        )
+
+        cropped_af_window = (
+            af_window[0] - scaler_crop[0],
+            af_window[1] - scaler_crop[1],
+            af_window[2],
+            af_window[3],
+        )
+
         output_size = (
-            round(cropped_real_sensor_size[0] / sensor_size_factor),
-            round(cropped_real_sensor_size[1] / sensor_size_factor),
+            cropped_real_sensor_size[0] // sensor_size_factor,
+            cropped_real_sensor_size[1] // sensor_size_factor,
         )
 
         preview_size = (
-            round(output_size[0] / preview_size_factor),
-            round(output_size[1] / preview_size_factor),
+            output_size[0] // preview_size_factor,
+            output_size[1] // preview_size_factor,
         )
 
-        frame_duration = round(1000000 / frames_per_second)
+        w = preview_size[0]
+        h = preview_size[1]
+
+        while h % 64 != 0:
+            w -= 1
+            h -= 1
+
+        preview_size = (w, h)
+
+        preview_size_to_crop_ratio = (
+            preview_size[0] / cropped_real_sensor_size[0],
+            preview_size[1] / cropped_real_sensor_size[1],
+        )
+
+        self.preview_af_window = (
+            round(cropped_af_window[0] * preview_size_to_crop_ratio[0]),
+            round(cropped_af_window[1] * preview_size_to_crop_ratio[1]),
+            round(cropped_af_window[2] * preview_size_to_crop_ratio[0]),
+            round(cropped_af_window[3] * preview_size_to_crop_ratio[1]),
+        )
+
+        frame_duration = 1000000 // frames_per_second
 
         self.motion_detection_frame_duration_limits = (
-            round(frame_duration / 12),
-            round(frame_duration / 12),
+            frame_duration // 12,
+            frame_duration // 12,
         )
 
         self.recording_frame_duration_limits = (frame_duration, frame_duration)
@@ -115,26 +162,14 @@ class Camera:
             controls={
                 "AfMetering": libcamera.controls.AfMeteringEnum.Windows,
                 "AfMode": libcamera.controls.AfModeEnum.Continuous,
-                "AfWindows": [
-                    (
-                        round(af_window_size[0] / 2),
-                        round(af_window_size[1] / 2),
-                        real_sensor_size[0] - af_window_size[0],
-                        real_sensor_size[1] - af_window_size[1],
-                    )
-                ],
+                "AfWindows": [af_window],
                 "AwbEnable": True,
                 "AwbMode": libcamera.controls.AwbModeEnum.Auto,
                 "AfRange": libcamera.controls.AfRangeEnum.Normal,
                 "AfSpeed": libcamera.controls.AfSpeedEnum.Fast,
                 "FrameDurationLimits": self.motion_detection_frame_duration_limits,
                 "NoiseReductionMode": libcamera.controls.draft.NoiseReductionModeEnum.Off,
-                "ScalerCrop": (
-                    round(crop_margin_size[0] / 2),
-                    round(crop_margin_size[1] / 2),
-                    cropped_real_sensor_size[0],
-                    cropped_real_sensor_size[1],
-                ),
+                "ScalerCrop": scaler_crop,
             },
             display=None,
             encode="main",
@@ -144,9 +179,10 @@ class Camera:
             sensor={"bit_depth": 10, "output_size": scaled_sensor_size},
         )
 
-        print(f"Video config: {video_config}")
-
         picam2.configure(video_config)
+
+        print(f"Camera properties: {picam2.camera_properties}")
+        print(f"Video config: {video_config}")
 
         encoder = H264Encoder(
             framerate=frames_per_second,

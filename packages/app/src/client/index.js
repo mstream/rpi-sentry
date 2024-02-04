@@ -1,12 +1,21 @@
 const avro = require("avro-js");
 
-function bufferToImage(bytes) {
+function bufferToCanvas(bytes, afWindow) {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(new Blob([bytes], { type: "image/jpeg" }));
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
-      resolve(img);
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      ctx.strokeStyle = "green";
+      ctx.rect(afWindow.x, afWindow.y, afWindow.w, afWindow.h);
+      ctx.stroke();
+      resolve(canvas);
     };
     img.src = url;
   });
@@ -38,12 +47,12 @@ function start(requestSchemaJson, updateSchemaJson) {
     };
 
     ws.onmessage = function (evt) {
-      console.log("new preview frame received");
       const update = updateType.fromBuffer(Buffer.from(evt.data));
 
       if (update.previewImage) {
-        bufferToImage(update.previewImage.bytes).then((img) =>
-          document.getElementById("preview").replaceChildren(img),
+        bufferToCanvas(update.previewImage.bytes, update.afWindow).then(
+          (canvas) =>
+            document.getElementById("preview").replaceChildren(canvas),
         );
       }
 

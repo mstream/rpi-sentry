@@ -4,10 +4,35 @@
     "type": "record",
     "fields": [
         {
+          "name": "afWindow",
+          "type": { 
+            "name": "AfWindow",
+            "type": "record",
+            "fields": [
+              {
+                "name": "x",
+                "type": "int"
+              },
+              {
+                "name": "y",
+                "type": "int"
+              },
+              {
+                "name": "w",
+                "type": "int"
+              },
+              {
+                "name": "h",
+                "type": "int"
+              }
+            ]
+          }
+        },
+        {
           "name": "cameraMode",
           "type": {
-              "type": "enum",
               "name": "CameraMode",
+              "type": "enum",
               "symbols": ["ALWAYS_ON", "AUTOMATIC"]
           }
         },
