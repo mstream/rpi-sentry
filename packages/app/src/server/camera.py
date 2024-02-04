@@ -2,6 +2,7 @@ import cv2
 import enum
 import libcamera
 from encoder import H264Encoder
+from functools import reduce
 from picamera2 import Picamera2
 from picamera2.outputs import CircularOutput
 import storage
@@ -190,14 +191,22 @@ class Camera:
         self.prev_frame = next_frame
         return result
 
-    def update(self):
+    def update(self, timestamp, sensor_readings):
+        all, on = reduce(
+            lambda acc, value: [acc[0] + 1, acc[1] + (1 if value else 0)],
+            sensor_readings.values(),
+            [0, 0],
+        )
+
+        rank = on / all
+
         match self.state:
             case State.IDLING:
-                self.update_idling(rank=1.0)
+                self.update_idling(rank=rank)
             case State.MOTION_SENSING:
-                self.update_motion_sensing(rank=1.0, timestamp=0)
+                self.update_motion_sensing(rank=rank, timestamp=timestamp)
             case State.RECORDING:
-                self.update_recording(rank=1.0)
+                self.update_recording(rank=rank)
 
     def update_idling(self, rank):
         if self.rank_is_above_trigger(rank):

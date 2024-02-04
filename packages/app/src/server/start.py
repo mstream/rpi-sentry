@@ -9,6 +9,7 @@ import io
 import jinja2
 import pathlib
 import shutil
+import time
 
 
 BASE_DIR = pathlib.Path(__file__).parent
@@ -23,12 +24,12 @@ camera_handler_key = app_key("camera_handler")
 websockets_key = app_key("websockets")
 
 with open(str(BASE_DIR / "request.avsc"), "rb") as f:
-    requestSchema = avro.schema.parse(f.read())
-    reader = avro.io.DatumReader(requestSchema)
+    request_schema = avro.schema.parse(f.read())
+    reader = avro.io.DatumReader(request_schema)
 
 with open(str(BASE_DIR / "update.avsc"), "rb") as f:
-    updateSchema = avro.schema.parse(f.read())
-    writer = avro.io.DatumWriter(updateSchema)
+    update_schema = avro.schema.parse(f.read())
+    writer = avro.io.DatumWriter(update_schema)
 
 
 async def handle_camera(app: web.Application):
@@ -37,13 +38,19 @@ async def handle_camera(app: web.Application):
         camera = app[camera_key]
         while True:
             websockets = app[websockets_key]
-            camera.update()
+            sensor_readings = {
+                "sensor1": True,
+                "sensor2": True,
+                "sensor3": False,
+            }
+            camera.update(time.time_ns(), sensor_readings)
             _, _, bytes_free = shutil.disk_usage("/")
             message_bytes = io.BytesIO()
             encoder = avro.io.BinaryEncoder(message_bytes)
             update_message = {
                 "cameraMode": camera.mode.name,
                 "previewImage": camera.preview_image,
+                "sensorReadings": sensor_readings,
                 "spaceRemaining": round(bytes_free / 2**30, 2),
                 "state": camera.state.name,
             }
@@ -78,8 +85,8 @@ async def on_shutdown(app: web.Application):
 @aiohttp_jinja2.template("index.html.jinja2")
 async def index_handler(request: web.Request):
     return {
-        "requestSchemaJson": str(requestSchema),
-        "updateSchemaJson": str(updateSchema),
+        "requestSchemaJson": str(request_schema),
+        "updateSchemaJson": str(update_schema),
     }
 
 

@@ -22,10 +22,14 @@
         {
             "name": "state",
             "type": {
-                "type": "enum",
                 "name": "State",
+                "type": "enum",
                 "symbols": ["IDLING", "MOTION_SENSING", "RECORDING"]
             }
+        },
+        {
+          "name": "sensorReadings",
+          "type": {"type": "map", "values": "boolean"}
         }
     ]
 }

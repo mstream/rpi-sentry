@@ -12,6 +12,13 @@ function bufferToImage(bytes) {
   });
 }
 
+function buildSensorsHtml(sensorReadings) {
+  return Object.entries(sensorReadings).reduce(
+    (acc, [name, value]) => `${acc}<p>${name}: ${value}</p>`,
+    "",
+  );
+}
+
 function start(requestSchemaJson, updateSchemaJson) {
   if ("WebSocket" in window) {
     const ws = new WebSocket(`ws://${window.location.host}/ws`);
@@ -33,15 +40,22 @@ function start(requestSchemaJson, updateSchemaJson) {
     ws.onmessage = function (evt) {
       console.log("new preview frame received");
       const update = updateType.fromBuffer(Buffer.from(evt.data));
+
       if (update.previewImage) {
         bufferToImage(update.previewImage.bytes).then((img) =>
           document.getElementById("preview").replaceChildren(img),
         );
       }
-      document.getElementById("state").innerText = `State: ${update.state}`;
+
       document.getElementById(
         "space",
       ).innerText = `Space remaining: ${update.spaceRemaining} GiB`;
+
+      document.getElementById("state").innerText = `State: ${update.state}`;
+
+      document.getElementById("sensors").innerHTML = buildSensorsHtml(
+        update.sensorReadings,
+      );
 
       switch (update.cameraMode) {
         case "ALWAYS_ON":
