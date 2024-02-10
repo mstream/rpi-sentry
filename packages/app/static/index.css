@@ -30,6 +30,7 @@
 }
 
 #preview {
+  aspect-ratio: 1;
   grid-area: content;
 }
 
@@ -37,7 +38,8 @@
   grid-area: footer;
 }
 
-#preview img {
+#preview canvas {
+  border: medium solid blue;
   height: 100%;
   object-fit: contain;
   width: 100%;
