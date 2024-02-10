@@ -1,0 +1,10 @@
+[Unit]
+After=rpi-sentry.service
+Description=Timer of Health Check for RPI Sentry
+
+[Timer]
+Unit=rpi-sentry-health-check.service
+OnCalendar=minutely
+
+[Install]
+WantedBy=multi-user.target

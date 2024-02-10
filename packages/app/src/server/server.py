@@ -96,6 +96,10 @@ async def index_handler(request: web.Request):
     }
 
 
+async def status_handler(request: web.Request):
+    return web.Response()
+
+
 async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     app = request.app
     client_message_reader = app[client_message_reader_key]
@@ -155,6 +159,7 @@ def init(base_dir, camera_logger, home_dir, server_logger) -> web.Application:
     )
 
     app.router.add_get("/", index_handler)
+    app.router.add_get("/status", status_handler)
     app.router.add_get("/ws", websocket_handler)
     app.router.add_static("/static", str(base_dir / "static"))
     app.on_startup.append(on_startup)

@@ -15,5 +15,5 @@
   become: false
   ansible.builtin.shell:
     cmd: '{{ tmp.path }}/install_pivariety_pkgs.sh -p {{ item }}'
-  loop: [libcamera, libcamera_apps_bookworm, ov64a40_kernel_driver]
+  loop: [libcamera, libcamera_apps, ov64a40_kernel_driver]
   notify: reboot

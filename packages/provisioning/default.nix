@@ -30,7 +30,8 @@ let
       runtimeInputs = [ config.deps.openssh ];
       text = ''
         cd ${config.deps.app}
-        scp -P ${builtins.toString port} -r rpi-sentry/* pi@${host}:/opt/rpi-sentry
+        scp -P ${builtins.toString port} -r rpi-sentry-health-check/* pi@${host}:/opt/rpi-sentry-health-check/
+        scp -P ${builtins.toString port} -r rpi-sentry/* pi@${host}:/opt/rpi-sentry/
       '';
     };
   hostConfig = { host = "192.168.0.96"; port = 22; };

@@ -4,7 +4,8 @@
 , ...
 }:
 let
-  dir = "$out/rpi-sentry";
+  healthCheckDir = "$out/rpi-sentry-health-check";
+  serverDir = "$out/rpi-sentry";
 in
 {
   imports = [
@@ -27,11 +28,13 @@ in
 
   nodejs-granular-v3 = {
     buildScript = ''
-      browserify src/client/index.js -o ${dir}/static/index.js
-      cp -r static ${dir}/
-      cp -r templates ${dir}/
-      cp src/server/* ${dir}/
-      cp src/*.avsc ${dir}/
+      mkdir -p ${healthCheckDir}
+      browserify src/client/index.js -o ${serverDir}/static/index.js
+      cp -r static ${serverDir}/
+      cp -r templates ${serverDir}/
+      cp src/server/* ${serverDir}/
+      cp src/*.avsc ${serverDir}/
+      cp src/health-check/* ${healthCheckDir}/
     '';
   };
 

@@ -1,0 +1,6 @@
+[Unit]
+Description=Health Check for RPI Sentry
+
+[Service]
+ExecStart=/bin/bash /opt/rpi-sentry-health-check/start.sh
+Type=oneshot

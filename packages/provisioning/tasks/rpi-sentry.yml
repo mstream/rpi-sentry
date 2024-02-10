@@ -2,12 +2,19 @@
 - name: RPI Sentry tasks
   tags: [rpi-sentry]
   block:
-    - name: RPI Sentry | Create deployment directory
+    - name: Install Health Check dependencies
+      ansible.builtin.apt:
+        name: httping
+        state: latest
+        install_recommends: false
+        update_cache: false
+    - name: RPI Sentry | Create deployment directories
       ansible.builtin.file:
-        path: /opt/rpi-sentry
+        path: /opt/{{ item }}
         state: directory
         owner: pi
         group: pi
+      loop: [rpi-sentry, rpi-sentry-health-check]
     - name: RPI Sentry | Create config directory
       ansible.builtin.file:
         path: /etc/rpi-sentry
@@ -21,16 +28,27 @@
         src: rpi-sentry.env.j2
         mode: 0644
         owner: root
-    - name: RPI Sentry | Create unit file
+    - name: RPI Sentry | Create service unit files
       ansible.builtin.template:
-        dest: /etc/systemd/system/rpi-sentry.service
+        dest: /etc/systemd/system/{{ item }}.service
         group: root
-        src: rpi-sentry.service.j2
+        src: '{{ item }}.service.j2'
         mode: 0644
         owner: root
+      loop: [rpi-sentry, rpi-sentry-health-check]
+    - name: RPI Sentry | Create timer unit files
+      ansible.builtin.template:
+        dest: /etc/systemd/system/{{ item }}.timer
+        group: root
+        src: '{{ item }}.timer.j2'
+        mode: 0644
+        owner: root
+      loop: [rpi-sentry-health-check]
     - name: RPI Sentry | Enable and start service
       ansible.builtin.systemd_service:
         name: rpi-sentry
+        daemon_reload: true
         enabled: true
         masked: false
         state: started
+      loop: [rpi-sentry.service, rpi-sentry-health-check.timer]
