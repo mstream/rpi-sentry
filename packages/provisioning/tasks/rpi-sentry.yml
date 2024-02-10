@@ -1,0 +1,36 @@
+---
+- name: RPI Sentry tasks
+  tags: [rpi-sentry]
+  block:
+    - name: RPI Sentry | Create deployment directory
+      ansible.builtin.file:
+        path: /opt/rpi-sentry
+        state: directory
+        owner: pi
+        group: pi
+    - name: RPI Sentry | Create config directory
+      ansible.builtin.file:
+        path: /etc/rpi-sentry
+        state: directory
+        owner: root
+        group: root
+    - name: RPI Sentry | Create environment file
+      ansible.builtin.template:
+        dest: /etc/rpi-sentry/rpi-sentry.env
+        group: root
+        src: rpi-sentry.env.j2
+        mode: 0644
+        owner: root
+    - name: RPI Sentry | Create unit file
+      ansible.builtin.template:
+        dest: /etc/systemd/system/rpi-sentry.service
+        group: root
+        src: rpi-sentry.service.j2
+        mode: 0644
+        owner: root
+    - name: RPI Sentry | Enable and start service
+      ansible.builtin.systemd_service:
+        name: rpi-sentry
+        enabled: true
+        masked: false
+        state: started

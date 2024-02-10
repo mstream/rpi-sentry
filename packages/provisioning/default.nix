@@ -9,6 +9,7 @@ let
     installPhase = ''
       cp -r roles $out/
       cp -r tasks $out/
+      cp -r templates $out/
       cp playbook-sudo-rpi.yml $out/
     '';
     src = lib.cleanSource ./.;
@@ -29,7 +30,7 @@ let
       runtimeInputs = [ config.deps.openssh ];
       text = ''
         cd ${config.deps.app}
-        scp -P ${builtins.toString port} -r rpi-sentry pi@${host}:~/
+        scp -P ${builtins.toString port} -r rpi-sentry/* pi@${host}:/opt/rpi-sentry
       '';
     };
   hostConfig = { host = "192.168.0.96"; port = 22; };

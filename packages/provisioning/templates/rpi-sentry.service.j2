@@ -1,0 +1,15 @@
+[Unit]
+After=After=multi-user.target
+Description=RPI Sentry
+Requires=network.target
+
+[Service]
+EnvironmentFile=/etc/rpi-sentry/rpi-sentry.env
+ExecStart=/usr/bin/python /opt/rpi-sentry/start.py
+Restart=always
+RestartSec=0
+Type=idle
+User=root
+
+[Install]
+WantedBy=multi-user.target

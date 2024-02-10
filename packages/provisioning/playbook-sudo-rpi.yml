@@ -91,3 +91,7 @@
       ansible.builtin.include_tasks:
         file: tasks/arducam.yml
       when: arducam_enabled
+    - name: Set up RPI Sentry
+      tags: [rpi-sentry]
+      ansible.builtin.include_tasks:
+        file: tasks/rpi-sentry.yml
