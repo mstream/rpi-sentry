@@ -7,12 +7,21 @@ import asyncio
 from camera import Camera, Mode
 import io
 import jinja2
+import logging
+import os
 import pathlib
 import shutil
 import time
 
 
 BASE_DIR = pathlib.Path(__file__).parent
+
+logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO"))
+
+camera_logger = logging.getLogger("camera")
+server_logger = logging.getLogger("server")
+
+logger = server_logger
 
 
 def app_key(name):
@@ -34,8 +43,8 @@ with open(str(BASE_DIR / "update.avsc"), "rb") as f:
 
 async def handle_camera(app: web.Application):
     try:
-        print("camera initialized")
         camera = app[camera_key]
+        logger.debug("Camera handler initialized")
         while True:
             websockets = app[websockets_key]
             sensor_readings = {
@@ -68,11 +77,11 @@ async def handle_camera(app: web.Application):
                     await ws.send_bytes(raw_bytes)
             await asyncio.sleep(1)
     except asyncio.CancelledError:
-        print("camera cancelled")
+        logger.warn("Camera handler cancelled")
     except Exception as err:
-        print(f"Unexpected {err=}, {type(err)=}")
+        logger.error("Unexpected camera error", exc_info=err)
     finally:
-        print("camera shutdown")
+        logger.info("Shutting down")
         raise GracefulExit()
 
 
@@ -103,7 +112,7 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
     await response.prepare(request)
     request.app[websockets_key].append(response)
     try:
-        print("websocket initialized")
+        logger.debug("New websocket initialized")
         async for msg in response:
             message_bytes = io.BytesIO(msg.data)
             decoder = avro.io.BinaryDecoder(message_bytes)
@@ -116,19 +125,20 @@ async def websocket_handler(request: web.Request) -> web.WebSocketResponse:
                     camera = request.app[camera_key]
                     camera.mode = Mode.AUTOMATIC
                 case _:
-                    print(f"Unmatched request message: {request_message}")
+                    logger.error("Unmatched request message: %s", request_message)
         return response
     except asyncio.CancelledError:
-        print("websocker cancelled")
+        logger.warn("Websocket handler cancelled")
     finally:
+        logger.info("Shutting down websocket")
         request.app[websockets_key].remove(response)
-        print("websocket cleanup")
 
 
 def init() -> web.Application:
     app = web.Application()
     app[websockets_key] = []
     app[camera_key] = Camera(
+        logger=camera_logger,
         root_dir_path=str(pathlib.Path.home() / "footage"),
     )
     aiohttp_jinja2.setup(

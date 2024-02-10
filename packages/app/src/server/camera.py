@@ -40,14 +40,15 @@ parameters = ov64a40_parameters()
 
 
 class Camera:
-    def __init__(self, root_dir_path):
-        self.trigger_threshold = 0.5
+    def __init__(self, logger, root_dir_path):
+        self.logger = logger
         self.maximum_recording_length = 30
+        self.mode = Mode.AUTOMATIC
         self.prev_frame = None
         self.recording_start_time = 0
         self.root_dir_path = root_dir_path
-        self.mode = Mode.AUTOMATIC
         self.state = State.IDLING
+        self.trigger_threshold = 0.5
         self.initialize_picam2(**parameters)
 
     def initialize_picam2(
@@ -181,8 +182,8 @@ class Camera:
 
         picam2.configure(video_config)
 
-        print(f"Camera properties: {picam2.camera_properties}")
-        print(f"Video config: {video_config}")
+        self.logger.debug("Camera properties: %s", picam2.camera_properties)
+        self.logger.debug("Video configuration: %s", video_config)
 
         encoder = H264Encoder(
             framerate=frames_per_second,
@@ -263,7 +264,7 @@ class Camera:
                     timestamp=timestamp,
                 )
                 self.encoder.output.fileoutput = file_output
-                print(f"saving footage to {file_output} ...")
+                self.logger.info("Starting recording to file %s", file_output)
                 self.encoder.output.start()
                 self.recording_start_time = time.time()
                 self.state = State.RECORDING
@@ -275,7 +276,7 @@ class Camera:
         if self.should_stop_recording(rank):
             self.encoder.output.stop()
             self.start_motion_sensing()
-            print("... done")
+            self.logger.info("Stopped recording")
 
     def start_motion_sensing(self):
         self.prev_frame = None
